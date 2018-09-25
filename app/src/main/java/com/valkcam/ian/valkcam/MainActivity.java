@@ -9,12 +9,24 @@ import android.webkit.WebView;
 import android.widget.Button;
 import android.widget.ImageButton;
 
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.UnknownHostException;
+
 /**
- * An example full-screen activity that shows and hides the system UI (i.e.
- * status bar and navigation/system bar) with user interaction.
+ * Todo:
+ *  Make on resume refresh webpage
+ *  Options: quality, restart serv, random moovements on/off
+ *  Send button data
  */
 public class MainActivity extends Activity {
-    String piAddr = "http://192.168.4.1:8000/index.html";
+
+    private Socket socket;
+
+    private static final int SERVERPORT = 5000;
+    private static final String SERVER_IP = "192.168.4.1";
+    private static final String piAddr = "http://192.168.4.1:8000/index.html";
 
 
     @Override
@@ -37,6 +49,13 @@ public class MainActivity extends Activity {
         btnLeft.setVisibility(View.INVISIBLE);
         btnRight.setVisibility(View.INVISIBLE);
 
+        btnTop.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+            }
+        });
+
         // disable scroll on touch
         /*mWebView.setOnTouchListener(new View.OnTouchListener() {
             @Override
@@ -46,8 +65,27 @@ public class MainActivity extends Activity {
         });*/
 
         mWebView.loadUrl(piAddr);
+        new Thread(new ClientThread()).start();
 
     }
 
+    class ClientThread implements Runnable {
+
+        @Override
+        public void run() {
+
+            try {
+
+                socket = new Socket(SERVER_IP, SERVERPORT);
+
+            } catch (UnknownHostException e1) {
+                e1.printStackTrace();
+            } catch (IOException e1) {
+                e1.printStackTrace();
+            }
+
+        }
+
+    }
 
 }

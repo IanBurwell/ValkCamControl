@@ -46,7 +46,6 @@
             android:layout_marginLeft="8dp"
             android:layout_marginRight="8dp"
             android:layout_marginStart="8dp"
-            android:background="#00000000"
             android:scaleType="fitXY"
             android:src="@mipmap/vc_right"
             app:layout_constraintBottom_toTopOf="@+id/btnRight"

@@ -59,12 +59,12 @@ s.listen(4)
 print("Socket Listening")
 
 #create thread to handle listening for clients
-def create_clients:
+def create_clients():
     while True:
         conn, addr = s.accept()
         print("Connection extablished: ", addr)
         start_new_thread(threaded_comms,(conn,addr));
-start_new_thread(create_clients)
+start_new_thread(create_clients, ())
 
 # Web streaming example
 # Adapted from source code in the official PiCamera package
@@ -148,7 +148,7 @@ class StreamingServer(socketserver.ThreadingMixIn, server.HTTPServer):
 
 
 #setup camera (with block ensures nice cleanup)
-with picamera.PiCamera(resolution='1280x720', framerate=24) as camera
+with picamera.PiCamera(resolution='1280x720', framerate=24) as camera:
     output = StreamingOutput()
     #camera.rotation = 90
     camera.start_recording(output, format='mjpeg')
@@ -156,10 +156,11 @@ with picamera.PiCamera(resolution='1280x720', framerate=24) as camera
         try:
             address = ('', 8000)
             server = StreamingServer(address, StreamingHandler)
+            print("Streaming")
             server.serve_forever()
         finally:
             camera.stop_recording()
-    start_new_thread(run_streaming)
+    start_new_thread(run_streaming, ())
 
     #setup servos
     wiringpi.wiringPiSetupGpio()
@@ -174,21 +175,21 @@ with picamera.PiCamera(resolution='1280x720', framerate=24) as camera
     startMillis = int(round(time.time() * 1000))
     while True:
         time.sleep(MAIN_LOOP_DELAY)
-        if varsDict['mode'] = 0:
+        if varDict['mode'] == 0:
             wiringpi.pwmWrite(18, varsDict['x'])
             wiringpi.pwmWrite(13, varsDict['y'])
-        elif varsDict['mode'] = 1:
+        elif varDict['mode'] == 1:
             millis = int(round(time.time() * 1000))
             x = pnoise1((startMillis-millis)/PERLIN_SPEED+1234.56789, octaves=4)
             y = pnoise1((startMillis-millis)/PERLIN_SPEED, octaves=4)
             wiringpi.pwmWrite(18, (x+1)/2*200+50)
             wiringpi.pwmWrite(13, (y+1)/2*200+50)
             
-        if varsDict['update'] != 0:
-            varsDict['update'] = 0
+        if varDict['update'] != 0:
+            varDict['update'] = 0
             camera.stop_recording()
-            camera.resolution = varsDict['quality']
-            camera.framerate = varsDict['fps']
+            camera.resolution = varDict['quality']
+            camera.framerate = varDict['fps']
             camera.start_recording(output, format='mjpeg')
         
 

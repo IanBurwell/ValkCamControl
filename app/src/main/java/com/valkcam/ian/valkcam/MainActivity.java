@@ -1,7 +1,11 @@
 package com.valkcam.ian.valkcam;
 
 import android.app.Activity;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceActivity;
+import android.preference.PreferenceManager;
 import android.view.View;
 import android.view.WindowManager;
 import android.webkit.WebView;
@@ -19,17 +23,25 @@ import java.util.HashMap;
 
 /**
  * Todo:
- *  Make on resume refresh webpage
+ *
  *  Options: quality, restart serv, random moovements on/off, auto wb etc.
  *  Send button data
+ *  Handle Host Unavailable
  */
-public class MainActivity extends Activity {
+public class MainActivity extends Activity  {
 
-    private static final long SOCKET_SEND_DELTA = 100;//ms in between sending
-    private static final int SERVERPORT = 5000;
-    private static final String SERVER_IP = "192.168.1.36";
-    private static final String piAddr = "http://192.168.4.1:8000/index.html";
+    public static final long SOCKET_SEND_DELTA = 100;//ms in between sending
+    public static final int SERVERPORT = 5000;
+    public static final String SERVER_IP = "192.168.1.36";
+    public static final String piAddr = "http://192.168.4.1:8000/index.html";
     private CommHandler cThread;
+
+    WebView mWebView;
+    ImageButton btnTop;
+    ImageButton btnBottom;
+    ImageButton btnLeft;
+    ImageButton btnRight;
+    ImageButton btnSettings;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,37 +52,81 @@ public class MainActivity extends Activity {
 
         setContentView(R.layout.activity_main);
 
-        WebView mWebView = findViewById(R.id.webview);
-        final ImageButton btnTop = findViewById(R.id.btnTop);
-        ImageButton btnBottom = findViewById(R.id.btnBottom);
-        ImageButton btnLeft = findViewById(R.id.btnLeft);
-        ImageButton btnRight = findViewById(R.id.btnRight);
-        final Activity This = this;
+        mWebView = findViewById(R.id.webview);
 
-        btnTop.setOnClickListener(new View.OnClickListener() {
+        btnTop = findViewById(R.id.btnTop);
+        btnBottom = findViewById(R.id.btnBottom);
+        btnLeft = findViewById(R.id.btnLeft);
+        btnRight = findViewById(R.id.btnRight);
+        btnSettings = findViewById(R.id.btnSettings);
+
+        btnSettings.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
-                cThread.setVar("x", (int)(Math.random()*100));
-
-                Toast.makeText(This, "test", Toast.LENGTH_SHORT).show();
+            public void onClick(View view) {
+                startActivity(new Intent(MainActivity.this, PrefActivity.class));
 
             }
         });
 
-
-        // disable scroll on touch
-        /*mWebView.setOnTouchListener(new View.OnTouchListener() {
+        btnTop.setOnClickListener(new View.OnClickListener() {
             @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                return (event.getAction() == MotionEvent.ACTION_MOVE);
+            public void onClick(View v) {
+                cThread.setVar("x", 5);
             }
-        });*/
+        });
 
         mWebView.loadUrl(piAddr);
+
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        updatePrefs();
+    }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        updatePrefs();
+    }
 
+    public static boolean updatePrefs = false;
+    private void updatePrefs(){
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        if(prefs.getBoolean("pref_restart", false)){
+            mWebView.reload();
+            cThread = new CommHandler();
+            prefs.edit().putBoolean("pref_restart", false).apply();
+        }
+
+        if(Integer.parseInt(prefs.getString("pref_mode", "0")) == 0)
+            updateManual(true);
+        else
+            updateManual(false);
+
+        if(updatePrefs){
+            cThread.setVar("mode", Integer.parseInt(prefs.getString("pref_mode", "0")));
+            cThread.setVar("quality", Integer.parseInt(prefs.getString("pref_quality", "1")));
+            cThread.setVar("update", 1);//always do last in-case data is sent in two bursts
+        }
+    }
+
+    private void updateManual(boolean manual)
+
+    {
+        if(manual) {
+            btnBottom.setVisibility(View.VISIBLE);
+            btnLeft.setVisibility(View.VISIBLE);
+            btnRight.setVisibility(View.VISIBLE);
+            btnTop.setVisibility(View.VISIBLE);
+        }else{
+            btnBottom.setVisibility(View.INVISIBLE);
+            btnLeft.setVisibility(View.INVISIBLE);
+            btnRight.setVisibility(View.INVISIBLE);
+            btnTop.setVisibility(View.INVISIBLE);
+        }
+    }
 
     class CommHandler extends Thread{
 
@@ -101,6 +157,7 @@ public class MainActivity extends Activity {
                         sentmillis = System.currentTimeMillis();
                         output.println(variables.toString());
                         output.flush();
+                        variables.clear();
                         updated = false;
                     }
                 }
@@ -113,7 +170,6 @@ public class MainActivity extends Activity {
 
             }
         }
-
 
         public void setVar(String s, int i){
             variables.put(s, i);

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="pref_mode_entries">
+        <item>Manual</item>
+        <item>Random - Perlin</item>
+        <item>Random - Jump</item>
+    </string-array>
+
+    <string-array name="pref_mode_values">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+    </string-array>
+
+    <string-array name="pref_quality_entries">
+        <item>1080p30</item>
+        <item>720p30</item>
+        <item>720p60</item>
+        <item>480p30</item>
+        <item>480p60</item>
+        <item>480p90</item>
+    </string-array>
+
+    <string-array name="pref_quality_values">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+    </string-array>
+
+</resources>

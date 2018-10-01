@@ -24,9 +24,8 @@ PERLIN_SPEED = 2500     #the larger the smmoother
 
 varDict = {'x':0,
            'y':0,
-           'mode':0,    #0:manual, 1:perlin, 2:
-           'quality':"720p", 
-           'fps':30,
+           'mode':0,    #0:manual, 1:perlin, 2:random, 3:still
+           'quality':0, #0:1080p30, 1:720p30, 2:720p60, 3:480p30, 4:480p60, 5:480p90
            'update':1}
 
 #COde to handle communication with client sockets
@@ -176,20 +175,45 @@ with picamera.PiCamera(resolution='1280x720', framerate=24) as camera:
     while True:
         time.sleep(MAIN_LOOP_DELAY)
         if varDict['mode'] == 0:
-            wiringpi.pwmWrite(18, varsDict['x'])
-            wiringpi.pwmWrite(13, varsDict['y'])
+            wiringpi.pwmWrite(18, varDict['x'])
+            wiringpi.pwmWrite(13, varDict['y'])
         elif varDict['mode'] == 1:
             millis = int(round(time.time() * 1000))
             x = pnoise1((startMillis-millis)/PERLIN_SPEED+1234.56789, octaves=4)
             y = pnoise1((startMillis-millis)/PERLIN_SPEED, octaves=4)
-            wiringpi.pwmWrite(18, (x+1)/2*200+50)
-            wiringpi.pwmWrite(13, (y+1)/2*200+50)
+            wiringpi.pwmWrite(18, int((x+1)/2*200+50))
+            wiringpi.pwmWrite(13, int((y+1)/2*200+50))
+        elif varDict['mode'] == 2:
+            #
+            #   TODO: RANDOM LOOKING
+            #
+        else:
+            wiringpi.pwmWrite(18, 150)
+            wiringpi.pwmWrite(13, 150)
+
             
         if varDict['update'] != 0:
             varDict['update'] = 0
             camera.stop_recording()
-            camera.resolution = varDict['quality']
-            camera.framerate = varDict['fps']
+            quality = varDict['quality']
+            if quality == 0:
+                camera.resolution = "1920x1080"
+                camera.framerate = 30
+            elif quality == 1:
+                camera.resolution = "1280x720"
+                camera.framerate = 30
+            elif quality == 2:
+                camera.resolution = "1280x720"
+                camera.framerate = 60
+            elif quality == 3:
+                camera.resolution = "640x480"
+                camera.framerate = 30
+            elif quality == 4:
+                camera.resolution = "640x480"
+                camera.framerate = 60
+            elif quality == 5:
+                camera.resolution = "640x480"
+                camera.framerate = 90
             camera.start_recording(output, format='mjpeg')
         
 

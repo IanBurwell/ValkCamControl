@@ -1,20 +1,18 @@
 package com.valkcam.ian.valkcam;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.webkit.WebView;
 import android.widget.ImageButton;
-import android.widget.Toast;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
@@ -24,13 +22,14 @@ import java.util.HashMap;
 /**
  * Todo:
  *
- *  Options: quality, restart serv, random moovements on/off, auto wb etc.
- *  Send button data
+ *  Options: auto wb?
  *  Handle Host Unavailable
+ *  Take Picture?
  */
 public class MainActivity extends Activity  {
 
-    public static final long SOCKET_SEND_DELTA = 100;//ms in between sending
+    public static final long SOCKET_CHECK_SEND_DELTA = 10;//ms in between checking to send
+    public static final long BUTTON_SEND_DELTA = 50;//ms in between sending
     public static final int SERVERPORT = 5000;
     public static final String SERVER_IP = "192.168.1.36";
     public static final String piAddr = "http://192.168.4.1:8000/index.html";
@@ -43,6 +42,7 @@ public class MainActivity extends Activity  {
     ImageButton btnRight;
     ImageButton btnSettings;
 
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -54,24 +54,91 @@ public class MainActivity extends Activity  {
 
         mWebView = findViewById(R.id.webview);
 
-        btnTop = findViewById(R.id.btnTop);
-        btnBottom = findViewById(R.id.btnBottom);
+        btnTop = findViewById(R.id.btnUp);
+        btnBottom = findViewById(R.id.btnDown);
         btnLeft = findViewById(R.id.btnLeft);
         btnRight = findViewById(R.id.btnRight);
         btnSettings = findViewById(R.id.btnSettings);
 
+        //SETTINGS
         btnSettings.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 startActivity(new Intent(MainActivity.this, PrefActivity.class));
-
             }
         });
 
-        btnTop.setOnClickListener(new View.OnClickListener() {
+        //ARROW KEYS
+        btnRight.setOnTouchListener(new View.OnTouchListener() {
+            long sentMillis = System.currentTimeMillis();
             @Override
-            public void onClick(View v) {
-                cThread.setVar("x", 5);
+            public boolean onTouch(View v, MotionEvent event) {
+                switch(event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        if(System.currentTimeMillis() - sentMillis > BUTTON_SEND_DELTA){
+                            cThread.setVar("x", 1);
+                            sentMillis = System.currentTimeMillis();
+                        }
+                        return true;
+                    case MotionEvent.ACTION_UP:
+                        // No longer down
+                        return true;
+                }
+                return false;
+            }
+        });
+        btnLeft.setOnTouchListener(new View.OnTouchListener() {
+            long sentMillis = System.currentTimeMillis();
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                switch(event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        if(System.currentTimeMillis() - sentMillis > BUTTON_SEND_DELTA){
+                            cThread.setVar("x", -1);
+                            sentMillis = System.currentTimeMillis();
+                        }
+                        return true;
+                    case MotionEvent.ACTION_UP:
+                        // No longer down
+                        return true;
+                }
+                return false;
+            }
+        });
+        btnTop.setOnTouchListener(new View.OnTouchListener() {
+            long sentMillis = System.currentTimeMillis();
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                switch(event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        if(System.currentTimeMillis() - sentMillis > BUTTON_SEND_DELTA){
+                            cThread.setVar("y", 1);
+                            sentMillis = System.currentTimeMillis();
+                        }
+                        return true;
+                    case MotionEvent.ACTION_UP:
+                        // No longer down
+                        return true;
+                }
+                return false;
+            }
+        });
+        btnBottom.setOnTouchListener(new View.OnTouchListener() {
+            long sentMillis = System.currentTimeMillis();
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                switch(event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        if(System.currentTimeMillis() - sentMillis > BUTTON_SEND_DELTA){
+                            cThread.setVar("y", -1);
+                            sentMillis = System.currentTimeMillis();
+                        }
+                        return true;
+                    case MotionEvent.ACTION_UP:
+                        // No longer down
+                        return true;
+                }
+                return false;
             }
         });
 
@@ -112,9 +179,7 @@ public class MainActivity extends Activity  {
         }
     }
 
-    private void updateManual(boolean manual)
-
-    {
+    private void updateManual(boolean manual) {
         if(manual) {
             btnBottom.setVisibility(View.VISIBLE);
             btnLeft.setVisibility(View.VISIBLE);
@@ -132,8 +197,10 @@ public class MainActivity extends Activity  {
 
         private HashMap<String, Integer> variables = new HashMap<>();
         private boolean updated = false;
+        private boolean restart = false;
+        public boolean connected = false;
 
-        public CommHandler() {
+        CommHandler() {
             super();
             this.start();
         }
@@ -142,38 +209,63 @@ public class MainActivity extends Activity  {
         public void run() {
             super.run();
 
-            Socket socket;
+            Socket socket = new Socket();
             OutputStream out;
             PrintWriter output;
 
-            try {
-                socket = new Socket(SERVER_IP, SERVERPORT);
-                out = socket.getOutputStream();
-                output = new PrintWriter(out);
-
-                long sentmillis = System.currentTimeMillis();
-                while(!interrupted()){
-                    if(System.currentTimeMillis() - sentmillis > SOCKET_SEND_DELTA && updated && !variables.isEmpty()){
-                        sentmillis = System.currentTimeMillis();
-                        output.println(variables.toString());
-                        output.flush();
-                        variables.clear();
-                        updated = false;
+            while(!interrupted()) {
+                try {
+                    while (!interrupted() && !connected) {
+                        try {
+                            socket = new Socket(SERVER_IP, SERVERPORT);
+                            connected = true;
+                        } catch (UnknownHostException e) {
+                            connected = false;
+                            try {
+                                Thread.sleep(1000);
+                            } catch (InterruptedException e1) {
+                                e1.printStackTrace();
+                            }
+                        }
                     }
+
+                    out = socket.getOutputStream();
+                    output = new PrintWriter(out);
+
+                    long sentmillis = System.currentTimeMillis();
+                    while (!interrupted() && connected) {
+                        if (socket.getInputStream().read() == -1) {
+                            connected = false;
+                            break;
+                        }
+                        if (System.currentTimeMillis() - sentmillis > SOCKET_CHECK_SEND_DELTA && updated && !variables.isEmpty()) {
+                            sentmillis = System.currentTimeMillis();
+                            output.println(variables.toString());
+                            output.flush();
+                            variables.clear();
+                            updated = false;
+                        }
+                    }
+
+                    socket.close();
+                    output.close();
+                    out.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    connected = false;
+                    socket = null;
                 }
-
-                socket.close();
-                output.close();
-                out.close();
-            } catch (Exception e1) {
-                e1.printStackTrace();
-
             }
         }
 
         public void setVar(String s, int i){
             variables.put(s, i);
             updated = true;
+        }
+
+        public void restart(){
+            this.interrupt();
+            restart = true;
         }
 
     }

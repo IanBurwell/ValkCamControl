@@ -40,8 +40,8 @@
 
         <ImageButton
             android:id="@+id/btnSettings"
-            android:layout_width="80dp"
-            android:layout_height="50dp"
+            android:layout_width="40dp"
+            android:layout_height="25dp"
             android:layout_marginBottom="8dp"
             android:layout_marginEnd="8dp"
             android:layout_marginLeft="8dp"
@@ -53,81 +53,69 @@
             android:src="@mipmap/vc_button"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.016"
+            app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.025" />
+            app:layout_constraintVertical_bias="0.0" />
 
         <ImageButton
-            android:id="@+id/btnTop"
-            android:layout_width="45dp"
-            android:layout_height="62dp"
-            android:layout_marginEnd="8dp"
-            android:layout_marginLeft="8dp"
-            android:layout_marginRight="8dp"
-            android:layout_marginStart="8dp"
-            android:background="#00000000"
-            android:scaleType="fitXY"
-            android:src="@mipmap/vc_right"
-            app:layout_constraintBottom_toTopOf="@+id/btnRight"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.0"
-            app:layout_constraintStart_toEndOf="@+id/btnLeft"
-            app:layout_constraintTop_toBottomOf="@+id/btnLeft" />
-
-        <ImageButton
-            android:id="@+id/btnBottom"
-            android:layout_width="45dp"
-            android:layout_height="62dp"
-            android:layout_marginEnd="8dp"
-            android:layout_marginLeft="8dp"
-            android:layout_marginRight="8dp"
-            android:layout_marginStart="8dp"
-            android:background="#00000000"
-            android:scaleType="fitXY"
-            android:src="@mipmap/vc_left"
-            app:layout_constraintBottom_toTopOf="@+id/btnRight"
-            app:layout_constraintEnd_toStartOf="@+id/btnLeft"
-            app:layout_constraintHorizontal_bias="1.0"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/btnLeft" />
-
-        <ImageButton
-            android:id="@+id/btnRight"
-            android:layout_width="62dp"
-            android:layout_height="45dp"
-            android:layout_marginBottom="32dp"
-            android:layout_marginEnd="8dp"
-            android:layout_marginLeft="8dp"
-            android:layout_marginRight="8dp"
-            android:layout_marginStart="8dp"
-            android:background="#00000000"
-            android:scaleType="fitXY"
+            android:id="@+id/btnDown"
+            android:layout_width="66dp"
+            android:layout_height="48dp"
+            android:layout_marginBottom="4dp"
+            android:layout_marginEnd="60dp"
+            android:layout_marginLeft="400dp"
+            android:layout_marginRight="60dp"
+            android:layout_marginStart="400dp"
+            android:layout_marginTop="200dp"
             android:src="@mipmap/vc_down"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.85"
-            app:layout_constraintStart_toStartOf="parent" />
+            app:layout_constraintHorizontal_bias="0.9"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.909" />
 
         <ImageButton
-            android:id="@+id/btnLeft"
-            android:layout_width="62dp"
-            android:layout_height="45dp"
-            android:layout_marginBottom="76dp"
+            android:id="@+id/btnRight"
+            android:layout_width="48dp"
+            android:layout_height="66dp"
+            android:layout_marginBottom="8dp"
             android:layout_marginEnd="8dp"
             android:layout_marginLeft="8dp"
             android:layout_marginRight="8dp"
             android:layout_marginStart="8dp"
-            android:layout_marginTop="8dp"
-            android:background="#00000000"
-            android:scaleType="fitXY"
-            android:src="@mipmap/vc_button"
-            app:layout_constraintBottom_toTopOf="@+id/btnRight"
+            android:src="@mipmap/vc_right"
+            app:layout_constraintBottom_toTopOf="@+id/btnDown"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.85"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="1.0" />
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toEndOf="@+id/btnDown" />
+
+        <ImageButton
+            android:id="@+id/btnLeft"
+            android:layout_width="48dp"
+            android:layout_height="66dp"
+            android:layout_marginBottom="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginRight="8dp"
+            android:src="@mipmap/vc_left"
+            app:layout_constraintBottom_toTopOf="@+id/btnDown"
+            app:layout_constraintEnd_toStartOf="@+id/btnDown" />
+
+        <ImageButton
+            android:id="@+id/btnUp"
+            android:layout_width="66dp"
+            android:layout_height="48dp"
+            android:layout_marginBottom="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginLeft="8dp"
+            android:layout_marginRight="8dp"
+            android:layout_marginStart="8dp"
+            android:src="@mipmap/vc_button"
+            app:layout_constraintBottom_toTopOf="@+id/btnLeft"
+            app:layout_constraintEnd_toStartOf="@+id/btnRight"
+            app:layout_constraintStart_toEndOf="@+id/btnLeft" />
+
     </android.support.constraint.ConstraintLayout>
 
 </FrameLayout>

@@ -51,7 +51,7 @@ def threaded_comms(soc, addr):
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 print('Socket created')
 try:
-    s.bind((socket.gethostname(), 5000))
+    s.bind(('192.168.4.1', 5000))
 except socket.error as err:
     print('Bind failed. Error Code : ' .format(err))
 s.listen(4)

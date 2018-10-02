@@ -29,7 +29,7 @@
             android:contentDescription="overlay"
             android:cropToPadding="false"
             android:scaleType="centerCrop"
-            android:src="@mipmap/vc_overlay"
+            android:src="@drawable/vc_overlay"
             tools:rotation="90" />
 
     </WebView>
@@ -40,7 +40,7 @@
 
         <ImageButton
             android:id="@+id/btnSettings"
-            android:layout_width="40dp"
+            android:layout_width="25dp"
             android:layout_height="25dp"
             android:layout_marginBottom="8dp"
             android:layout_marginEnd="8dp"
@@ -50,7 +50,7 @@
             android:layout_marginTop="8dp"
             android:background="#00000000"
             android:scaleType="fitXY"
-            android:src="@mipmap/vc_button"
+            android:src="@drawable/disc"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.0"
@@ -58,63 +58,26 @@
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintVertical_bias="0.0" />
 
-        <ImageButton
-            android:id="@+id/btnDown"
-            android:layout_width="66dp"
-            android:layout_height="48dp"
-            android:layout_marginBottom="4dp"
-            android:layout_marginEnd="60dp"
-            android:layout_marginLeft="400dp"
-            android:layout_marginRight="60dp"
-            android:layout_marginStart="400dp"
-            android:layout_marginTop="200dp"
-            android:src="@mipmap/vc_down"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.9"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.909" />
-
-        <ImageButton
-            android:id="@+id/btnRight"
-            android:layout_width="48dp"
-            android:layout_height="66dp"
+        <io.github.controlwear.virtual.joystick.android.JoystickView xmlns:custom="http://schemas.android.com/apk/res-auto"
+            android:id="@+id/joystickView"
+            android:layout_width="186dp"
+            android:layout_height="186dp"
             android:layout_marginBottom="8dp"
             android:layout_marginEnd="8dp"
             android:layout_marginLeft="8dp"
             android:layout_marginRight="8dp"
             android:layout_marginStart="8dp"
-            android:src="@mipmap/vc_right"
-            app:layout_constraintBottom_toTopOf="@+id/btnDown"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.0"
-            app:layout_constraintStart_toEndOf="@+id/btnDown" />
-
-        <ImageButton
-            android:id="@+id/btnLeft"
-            android:layout_width="48dp"
-            android:layout_height="66dp"
-            android:layout_marginBottom="8dp"
-            android:layout_marginEnd="8dp"
-            android:layout_marginRight="8dp"
-            android:src="@mipmap/vc_left"
-            app:layout_constraintBottom_toTopOf="@+id/btnDown"
-            app:layout_constraintEnd_toStartOf="@+id/btnDown" />
-
-        <ImageButton
-            android:id="@+id/btnUp"
-            android:layout_width="66dp"
-            android:layout_height="48dp"
-            android:layout_marginBottom="8dp"
-            android:layout_marginEnd="8dp"
-            android:layout_marginLeft="8dp"
-            android:layout_marginRight="8dp"
-            android:layout_marginStart="8dp"
-            android:src="@mipmap/vc_button"
-            app:layout_constraintBottom_toTopOf="@+id/btnLeft"
-            app:layout_constraintEnd_toStartOf="@+id/btnRight"
-            app:layout_constraintStart_toEndOf="@+id/btnLeft" />
+            android:layout_marginTop="8dp"
+            custom:JV_backgroundColor="#96566873"
+            custom:JV_borderColor="#e62a3d48"
+            custom:JV_borderWidth="4dp"
+            custom:JV_buttonColor="#e13d5563"
+            custom:layout_constraintBottom_toBottomOf="parent"
+            custom:layout_constraintEnd_toEndOf="parent"
+            custom:layout_constraintHorizontal_bias="1.0"
+            custom:layout_constraintStart_toStartOf="parent"
+            custom:layout_constraintTop_toTopOf="parent"
+            custom:layout_constraintVertical_bias="1.0" />
 
     </android.support.constraint.ConstraintLayout>
 

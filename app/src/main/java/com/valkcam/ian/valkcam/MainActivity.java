@@ -4,8 +4,11 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.ColorStateList;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.preference.PreferenceManager;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
@@ -17,30 +20,33 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+
+import io.github.controlwear.virtual.joystick.android.JoystickView;
 
 /**
  * Todo:
- *
+ *  FIX CONCURRENCY ISSUE ON LINE 286
+ *  Fix connection icon
  *  Options: auto wb?
  *  Handle Host Unavailable
  *  Take Picture?
+ *  Auto Connect to Wifi?
  */
 public class MainActivity extends Activity  {
 
     public static final long SOCKET_CHECK_SEND_DELTA = 10;//ms in between checking to send
     public static final long BUTTON_SEND_DELTA = 50;//ms in between sending
     public static final int SERVERPORT = 5000;
-    public static final String SERVER_IP = "192.168.1.36";
+    public static final String SERVER_IP = "192.168.4.1";
     public static final String piAddr = "http://192.168.4.1:8000/index.html";
     private CommHandler cThread;
 
     WebView mWebView;
-    ImageButton btnTop;
-    ImageButton btnBottom;
-    ImageButton btnLeft;
-    ImageButton btnRight;
     ImageButton btnSettings;
+    JoystickView joystick;
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -54,11 +60,8 @@ public class MainActivity extends Activity  {
 
         mWebView = findViewById(R.id.webview);
 
-        btnTop = findViewById(R.id.btnUp);
-        btnBottom = findViewById(R.id.btnDown);
-        btnLeft = findViewById(R.id.btnLeft);
-        btnRight = findViewById(R.id.btnRight);
         btnSettings = findViewById(R.id.btnSettings);
+
 
         //SETTINGS
         btnSettings.setOnClickListener(new View.OnClickListener() {
@@ -68,82 +71,36 @@ public class MainActivity extends Activity  {
             }
         });
 
-        //ARROW KEYS
-        btnRight.setOnTouchListener(new View.OnTouchListener() {
+        //JOYSTICK
+        joystick = (JoystickView) findViewById(R.id.joystickView);
+        joystick.setOnMoveListener(new JoystickView.OnMoveListener() {
             long sentMillis = System.currentTimeMillis();
             @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                switch(event.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
-                        if(System.currentTimeMillis() - sentMillis > BUTTON_SEND_DELTA){
-                            cThread.setVar("x", 1);
-                            sentMillis = System.currentTimeMillis();
-                        }
-                        return true;
-                    case MotionEvent.ACTION_UP:
-                        // No longer down
-                        return true;
+            public void onMove(int angle, int strength) {
+                if(System.currentTimeMillis() - sentMillis > BUTTON_SEND_DELTA && strength > 5){
+                    cThread.setVar("x", (int)(strength*Math.cos(Math.toRadians(angle))));
+                    cThread.setVar("y", (int)(strength*Math.sin(Math.toRadians(angle))));
+                    sentMillis = System.currentTimeMillis();
                 }
-                return false;
             }
         });
-        btnLeft.setOnTouchListener(new View.OnTouchListener() {
-            long sentMillis = System.currentTimeMillis();
+
+        //CONNECTION ICON
+        cThread.addConnectionListener(new onConnectionStateListener() {
             @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                switch(event.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
-                        if(System.currentTimeMillis() - sentMillis > BUTTON_SEND_DELTA){
-                            cThread.setVar("x", -1);
-                            sentMillis = System.currentTimeMillis();
-                        }
-                        return true;
-                    case MotionEvent.ACTION_UP:
-                        // No longer down
-                        return true;
+            public void onUpdate(boolean connected) {
+                if(connected){
+                    btnSettings.setBackgroundResource(R.drawable.conn);
+                }else{
+                    btnSettings.setBackgroundResource(R.drawable.disc);
                 }
-                return false;
+                Log.e("Valk","Buttons connected: " + connected);
+
             }
         });
-        btnTop.setOnTouchListener(new View.OnTouchListener() {
-            long sentMillis = System.currentTimeMillis();
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                switch(event.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
-                        if(System.currentTimeMillis() - sentMillis > BUTTON_SEND_DELTA){
-                            cThread.setVar("y", 1);
-                            sentMillis = System.currentTimeMillis();
-                        }
-                        return true;
-                    case MotionEvent.ACTION_UP:
-                        // No longer down
-                        return true;
-                }
-                return false;
-            }
-        });
-        btnBottom.setOnTouchListener(new View.OnTouchListener() {
-            long sentMillis = System.currentTimeMillis();
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                switch(event.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
-                        if(System.currentTimeMillis() - sentMillis > BUTTON_SEND_DELTA){
-                            cThread.setVar("y", -1);
-                            sentMillis = System.currentTimeMillis();
-                        }
-                        return true;
-                    case MotionEvent.ACTION_UP:
-                        // No longer down
-                        return true;
-                }
-                return false;
-            }
-        });
+
 
         mWebView.loadUrl(piAddr);
-
     }
 
     @Override
@@ -152,18 +109,11 @@ public class MainActivity extends Activity  {
         updatePrefs();
     }
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-        updatePrefs();
-    }
-
     public static boolean updatePrefs = false;
     private void updatePrefs(){
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         if(prefs.getBoolean("pref_restart", false)){
             mWebView.reload();
-            cThread = new CommHandler();
             prefs.edit().putBoolean("pref_restart", false).apply();
         }
 
@@ -181,15 +131,9 @@ public class MainActivity extends Activity  {
 
     private void updateManual(boolean manual) {
         if(manual) {
-            btnBottom.setVisibility(View.VISIBLE);
-            btnLeft.setVisibility(View.VISIBLE);
-            btnRight.setVisibility(View.VISIBLE);
-            btnTop.setVisibility(View.VISIBLE);
+            joystick.setVisibility(View.VISIBLE);
         }else{
-            btnBottom.setVisibility(View.INVISIBLE);
-            btnLeft.setVisibility(View.INVISIBLE);
-            btnRight.setVisibility(View.INVISIBLE);
-            btnTop.setVisibility(View.INVISIBLE);
+            joystick.setVisibility(View.INVISIBLE);
         }
     }
 
@@ -199,6 +143,7 @@ public class MainActivity extends Activity  {
         private boolean updated = false;
         private boolean restart = false;
         public boolean connected = false;
+        private final List<onConnectionStateListener> listeners = new ArrayList<onConnectionStateListener>();
 
         CommHandler() {
             super();
@@ -218,24 +163,24 @@ public class MainActivity extends Activity  {
                     while (!interrupted() && !connected) {
                         try {
                             socket = new Socket(SERVER_IP, SERVERPORT);
-                            connected = true;
-                        } catch (UnknownHostException e) {
-                            connected = false;
+                        } catch (Exception e) {
+                            setConnected(false);
                             try {
-                                Thread.sleep(1000);
+                                Thread.sleep(5000);
                             } catch (InterruptedException e1) {
                                 e1.printStackTrace();
                             }
                         }
                     }
 
+                    setConnected(true);
                     out = socket.getOutputStream();
                     output = new PrintWriter(out);
 
                     long sentmillis = System.currentTimeMillis();
-                    while (!interrupted() && connected) {
-                        if (socket.getInputStream().read() == -1) {
-                            connected = false;
+                    while (!interrupted()) {
+                        if (output.checkError()) {
+                            setConnected(false);
                             break;
                         }
                         if (System.currentTimeMillis() - sentmillis > SOCKET_CHECK_SEND_DELTA && updated && !variables.isEmpty()) {
@@ -252,9 +197,25 @@ public class MainActivity extends Activity  {
                     out.close();
                 } catch (IOException e) {
                     e.printStackTrace();
-                    connected = false;
+                    setConnected(false);
                     socket = null;
                 }
+            }
+        }
+
+        private void setConnected(boolean conn){
+            if(conn == connected)
+                return;
+            connected = conn;
+            final boolean c = conn;
+            for(onConnectionStateListener listener : listeners) {
+                final onConnectionStateListener l = listener;
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        l.onUpdate(c);
+                    }
+                });
             }
         }
 
@@ -263,11 +224,13 @@ public class MainActivity extends Activity  {
             updated = true;
         }
 
-        public void restart(){
-            this.interrupt();
-            restart = true;
+        public void addConnectionListener(onConnectionStateListener listener){
+            listeners.add(listener);
         }
-
     }
 
+    @FunctionalInterface
+    interface onConnectionStateListener {
+        void onUpdate(boolean connected);
+    }
 }

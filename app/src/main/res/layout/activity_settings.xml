@@ -2,8 +2,13 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent" android:layout_height="match_parent">
 
-
+    <SwitchPreference
+        android:key="pref_socketStatus"
+        android:title="Socket Server"
+        android:dialogTitle="Data Server"
+        android:defaultValue="true" />
     <ListPreference
+        android:dependency="pref_socketStatus"
         android:key="pref_mode"
         android:title="Servo Mode"
         android:dialogTitle="Servo Mode"
@@ -11,16 +16,13 @@
         android:entryValues="@array/pref_mode_values"
         android:defaultValue="0" />
     <ListPreference
+        android:dependency="pref_socketStatus"
         android:key="pref_quality"
         android:title="Camera Quality"
         android:dialogTitle="Camera Quality"
         android:entries="@array/pref_quality_entries"
         android:entryValues="@array/pref_quality_values"
         android:defaultValue="1" />
-    <SwitchPreference
-        android:key="pref_restart"
-        android:title="Restart"
-        android:dialogTitle="Restart Client"
-        android:defaultValue="false" />
+
 
 </PreferenceScreen>

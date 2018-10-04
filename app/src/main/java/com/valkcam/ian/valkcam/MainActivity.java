@@ -28,12 +28,11 @@ import io.github.controlwear.virtual.joystick.android.JoystickView;
 
 /**
  * Todo:
- *  FIX CONCURRENCY ISSUE ON LINE 286
+ *  tttttttt - FIX CONCURRENCY ISSUE ON LINE 286
  *  Fix connection icon
- *  Options: auto wb?
- *  Handle Host Unavailable
- *  Take Picture?
- *  Auto Connect to Wifi?
+ *  tttttttt - turn off socket server
+ *  tttttttt - hold down on icon ro refresh webview
+ *  default image when not connected
  */
 public class MainActivity extends Activity  {
 
@@ -48,11 +47,25 @@ public class MainActivity extends Activity  {
     ImageButton btnSettings;
     JoystickView joystick;
 
+    onConnectionStateListener cUL = new onConnectionStateListener() {
+        @Override
+        public void onUpdate(boolean connected) {
+            if(connected){
+                btnSettings.setBackgroundResource(R.drawable.conn);
+            }else{
+                btnSettings.setBackgroundResource(R.drawable.disc);
+            }
+            Log.e("Valk","Buttons connected: " + connected);
+        }
+    };
+
     @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        cThread = new CommHandler();
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        if(prefs.getBoolean("pref_socketStatus", true))
+            cThread = new CommHandler();
         //Remove notification bar
         this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
@@ -70,6 +83,14 @@ public class MainActivity extends Activity  {
                 startActivity(new Intent(MainActivity.this, PrefActivity.class));
             }
         });
+        btnSettings.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                mWebView.reload();
+                return true;
+            }
+        });
+
 
         //JOYSTICK
         joystick = (JoystickView) findViewById(R.id.joystickView);
@@ -77,7 +98,7 @@ public class MainActivity extends Activity  {
             long sentMillis = System.currentTimeMillis();
             @Override
             public void onMove(int angle, int strength) {
-                if(System.currentTimeMillis() - sentMillis > BUTTON_SEND_DELTA && strength > 5){
+                if(cThread != null && System.currentTimeMillis() - sentMillis > BUTTON_SEND_DELTA && strength > 5){
                     cThread.setVar("x", (int)(strength*Math.cos(Math.toRadians(angle))));
                     cThread.setVar("y", (int)(strength*Math.sin(Math.toRadians(angle))));
                     sentMillis = System.currentTimeMillis();
@@ -86,18 +107,7 @@ public class MainActivity extends Activity  {
         });
 
         //CONNECTION ICON
-        cThread.addConnectionListener(new onConnectionStateListener() {
-            @Override
-            public void onUpdate(boolean connected) {
-                if(connected){
-                    btnSettings.setBackgroundResource(R.drawable.conn);
-                }else{
-                    btnSettings.setBackgroundResource(R.drawable.disc);
-                }
-                Log.e("Valk","Buttons connected: " + connected);
-
-            }
-        });
+        cThread.addConnectionListener(cUL);
 
 
         mWebView.loadUrl(piAddr);
@@ -112,9 +122,12 @@ public class MainActivity extends Activity  {
     public static boolean updatePrefs = false;
     private void updatePrefs(){
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        if(prefs.getBoolean("pref_restart", false)){
-            mWebView.reload();
-            prefs.edit().putBoolean("pref_restart", false).apply();
+        if(cThread == null && prefs.getBoolean("pref_socketStatus", true)){
+            cThread = new CommHandler();
+            cThread.addConnectionListener(cUL);
+        }else if(cThread != null && !prefs.getBoolean("pref_socketStatus", true) ){
+            cThread.interrupt();
+            cThread = null;
         }
 
         if(Integer.parseInt(prefs.getString("pref_mode", "0")) == 0)
@@ -122,7 +135,7 @@ public class MainActivity extends Activity  {
         else
             updateManual(false);
 
-        if(updatePrefs){
+        if(updatePrefs && cThread != null){
             cThread.setVar("mode", Integer.parseInt(prefs.getString("pref_mode", "0")));
             cThread.setVar("quality", Integer.parseInt(prefs.getString("pref_quality", "1")));
             cThread.setVar("update", 1);//always do last in-case data is sent in two bursts
@@ -185,7 +198,9 @@ public class MainActivity extends Activity  {
                         }
                         if (System.currentTimeMillis() - sentmillis > SOCKET_CHECK_SEND_DELTA && updated && !variables.isEmpty()) {
                             sentmillis = System.currentTimeMillis();
-                            output.println(variables.toString());
+                            synchronized (this) {
+                                output.println(variables.toString());
+                            }
                             output.flush();
                             variables.clear();
                             updated = false;
@@ -220,13 +235,16 @@ public class MainActivity extends Activity  {
         }
 
         public void setVar(String s, int i){
-            variables.put(s, i);
-            updated = true;
+            synchronized (this) {
+                variables.put(s, i);
+                updated = true;
+            }
         }
 
         public void addConnectionListener(onConnectionStateListener listener){
             listeners.add(listener);
         }
+
     }
 
     @FunctionalInterface

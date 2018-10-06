@@ -30,7 +30,7 @@ import io.github.controlwear.virtual.joystick.android.JoystickView;
  * Todo:
  *  tttttttt - FIX CONCURRENCY ISSUE ON LINE 286
  *  Fix connection icon
- *  tttttttt - turn off socket server
+ *  turn off socket server
  *  tttttttt - hold down on icon ro refresh webview
  *  default image when not connected
  */
@@ -50,12 +50,12 @@ public class MainActivity extends Activity  {
     onConnectionStateListener cUL = new onConnectionStateListener() {
         @Override
         public void onUpdate(boolean connected) {
+            Log.e("Valk","Seen listener : " + connected);
             if(connected){
-                btnSettings.setBackgroundResource(R.drawable.conn);
+                btnSettings.setImageResource(R.drawable.conn);
             }else{
-                btnSettings.setBackgroundResource(R.drawable.disc);
+                btnSettings.setImageResource(R.drawable.disc);
             }
-            Log.e("Valk","Buttons connected: " + connected);
         }
     };
 
@@ -107,7 +107,8 @@ public class MainActivity extends Activity  {
         });
 
         //CONNECTION ICON
-        cThread.addConnectionListener(cUL);
+        if(prefs.getBoolean("pref_socketStatus", true))
+            cThread.addConnectionListener(cUL);
 
 
         mWebView.loadUrl(piAddr);
@@ -171,6 +172,7 @@ public class MainActivity extends Activity  {
             OutputStream out;
             PrintWriter output;
 
+            loop:
             while(!interrupted()) {
                 try {
                     while (!interrupted() && !connected) {
@@ -181,7 +183,7 @@ public class MainActivity extends Activity  {
                             try {
                                 Thread.sleep(5000);
                             } catch (InterruptedException e1) {
-                                e1.printStackTrace();
+                                break loop;
                             }
                         }
                     }
@@ -225,10 +227,11 @@ public class MainActivity extends Activity  {
             final boolean c = conn;
             for(onConnectionStateListener listener : listeners) {
                 final onConnectionStateListener l = listener;
-                runOnUiThread(new Runnable() {
+                MainActivity.this.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         l.onUpdate(c);
+                        Log.e("Valk","Calling listener : " + c);
                     }
                 });
             }

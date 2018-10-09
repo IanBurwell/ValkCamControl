@@ -28,10 +28,10 @@ import io.github.controlwear.virtual.joystick.android.JoystickView;
 
 /**
  * Todo:
- *  tttttttt - FIX CONCURRENCY ISSUE ON LINE 286
+ *  FIX CONCURRENCY ISSUE ON LINE 286
  *  Fix connection icon
- *  tttttttt - turn off socket server
- *  tttttttt - hold down on icon ro refresh webview
+ *  turn off socket server
+ *  hold down on icon ro refresh webview
  *  default image when not connected
  */
 public class MainActivity extends Activity  {

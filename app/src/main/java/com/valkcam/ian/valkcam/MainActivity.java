@@ -50,7 +50,6 @@ public class MainActivity extends Activity  {
     onConnectionStateListener cUL = new onConnectionStateListener() {
         @Override
         public void onUpdate(boolean connected) {
-            Log.e("Valk","Seen listener : " + connected);
             if(connected){
                 btnSettings.setImageResource(R.drawable.conn);
             }else{
@@ -178,32 +177,31 @@ public class MainActivity extends Activity  {
                     while (!interrupted() && !connected) {
                         try {
                             socket = new Socket(SERVER_IP, SERVERPORT);
+                            setConnected(true);
                         } catch (Exception e) {
                             setConnected(false);
                             try {
-                                Thread.sleep(5000);
+                                Thread.sleep(1000);
                             } catch (InterruptedException e1) {
                                 break loop;
                             }
                         }
                     }
 
-                    setConnected(true);
                     out = socket.getOutputStream();
                     output = new PrintWriter(out);
 
                     long sentmillis = System.currentTimeMillis();
                     while (!interrupted()) {
-                        if (output.checkError()) {
-                            setConnected(false);
-                            break;
-                        }
-                        if (System.currentTimeMillis() - sentmillis > SOCKET_CHECK_SEND_DELTA && updated && !variables.isEmpty()) {
+                        if (System.currentTimeMillis() - sentmillis > SOCKET_CHECK_SEND_DELTA) {
                             sentmillis = System.currentTimeMillis();
                             synchronized (this) {
                                 output.println(variables.toString());
                             }
-                            output.flush();
+                            if (output.checkError()) {
+                                setConnected(false);
+                                break;
+                            }
                             variables.clear();
                             updated = false;
                         }
@@ -225,13 +223,13 @@ public class MainActivity extends Activity  {
                 return;
             connected = conn;
             final boolean c = conn;
+            Log.d("Valk","Seen listener : " + conn);
             for(onConnectionStateListener listener : listeners) {
                 final onConnectionStateListener l = listener;
                 MainActivity.this.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         l.onUpdate(c);
-                        Log.e("Valk","Calling listener : " + c);
                     }
                 });
             }

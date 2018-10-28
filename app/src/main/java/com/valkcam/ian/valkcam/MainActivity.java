@@ -31,7 +31,11 @@ import io.github.controlwear.virtual.joystick.android.JoystickView;
  *  FIX CONCURRENCY ISSUE ON LINE 286
  *  Fix connection icon
  *  turn off socket server
+<<<<<<< HEAD
  *  hold down on icon ro refresh webview
+=======
+ *  tttttttt - hold down on icon ro refresh webview
+>>>>>>> ae5b3adf138c050fc3ef37b0e5c1824246f9a70f
  *  default image when not connected
  */
 public class MainActivity extends Activity  {
@@ -51,11 +55,10 @@ public class MainActivity extends Activity  {
         @Override
         public void onUpdate(boolean connected) {
             if(connected){
-                btnSettings.setBackgroundResource(R.drawable.conn);
+                btnSettings.setImageResource(R.drawable.conn);
             }else{
-                btnSettings.setBackgroundResource(R.drawable.disc);
+                btnSettings.setImageResource(R.drawable.disc);
             }
-            Log.e("Valk","Buttons connected: " + connected);
         }
     };
 
@@ -107,7 +110,8 @@ public class MainActivity extends Activity  {
         });
 
         //CONNECTION ICON
-        cThread.addConnectionListener(cUL);
+        if(prefs.getBoolean("pref_socketStatus", true))
+            cThread.addConnectionListener(cUL);
 
 
         mWebView.loadUrl(piAddr);
@@ -171,37 +175,37 @@ public class MainActivity extends Activity  {
             OutputStream out;
             PrintWriter output;
 
+            loop:
             while(!interrupted()) {
                 try {
                     while (!interrupted() && !connected) {
                         try {
                             socket = new Socket(SERVER_IP, SERVERPORT);
+                            setConnected(true);
                         } catch (Exception e) {
                             setConnected(false);
                             try {
-                                Thread.sleep(5000);
+                                Thread.sleep(1000);
                             } catch (InterruptedException e1) {
-                                e1.printStackTrace();
+                                break loop;
                             }
                         }
                     }
 
-                    setConnected(true);
                     out = socket.getOutputStream();
                     output = new PrintWriter(out);
 
                     long sentmillis = System.currentTimeMillis();
                     while (!interrupted()) {
-                        if (output.checkError()) {
-                            setConnected(false);
-                            break;
-                        }
-                        if (System.currentTimeMillis() - sentmillis > SOCKET_CHECK_SEND_DELTA && updated && !variables.isEmpty()) {
+                        if (System.currentTimeMillis() - sentmillis > SOCKET_CHECK_SEND_DELTA) {
                             sentmillis = System.currentTimeMillis();
                             synchronized (this) {
                                 output.println(variables.toString());
                             }
-                            output.flush();
+                            if (output.checkError()) {
+                                setConnected(false);
+                                break;
+                            }
                             variables.clear();
                             updated = false;
                         }
@@ -223,9 +227,10 @@ public class MainActivity extends Activity  {
                 return;
             connected = conn;
             final boolean c = conn;
+            Log.d("Valk","Seen listener : " + conn);
             for(onConnectionStateListener listener : listeners) {
                 final onConnectionStateListener l = listener;
-                runOnUiThread(new Runnable() {
+                MainActivity.this.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         l.onUpdate(c);

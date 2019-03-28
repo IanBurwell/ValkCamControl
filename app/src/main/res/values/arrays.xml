@@ -4,12 +4,14 @@
         <item>Manual</item>
         <item>Random - Perlin</item>
         <item>Random - Jump</item>
+        <item>Still</item>
     </string-array>
 
     <string-array name="pref_mode_values">
         <item>0</item>
         <item>1</item>
         <item>2</item>
+        <item>3</item>
     </string-array>
 
     <string-array name="pref_quality_entries">

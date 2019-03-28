@@ -10,7 +10,7 @@ from http import server
 import time
 import wiringpi
 from noise import pnoise1
-
+import random
 
 """
 ToDo:
@@ -24,7 +24,7 @@ PERLIN_SPEED = 2500     #the larger the smmoother
 
 varDict = {'x':0,
            'y':0,
-           'mode':0,    #0:manual, 1:perlin, 2:random, 3:still
+           'mode':2,    #0:manual, 1:perlin, 2:random, 3:still
            'quality':0, #0:1080p30, 1:720p30, 2:720p60, 3:480p30, 4:480p60, 5:480p90
            'update':1}
 
@@ -37,7 +37,7 @@ def threaded_comms(soc, addr):
         if not data:
             break
         msg = data.decode(encoding='UTF-8')
-        msg = msg.replace("{", "{\'").replace("=", "\': ").rstrip()    
+        msg = msg.replace("{", "{\'").replace("=", "\': ").replace("{\'}", "").rstrip()    
         print(addr[0] + ":" + msg)
         d = ast.literal_eval(msg);
         for key in varDict:
@@ -171,12 +171,15 @@ with picamera.PiCamera(resolution='1280x720', framerate=24) as camera:
     wiringpi.pwmSetRange(2000)
 
     #handle servos and settings changes
-    startMillis = int(round(time.time() * 1000))
+    startMillis = lastUpdate = int(round(time.time() * 1000))
     while True:
         time.sleep(MAIN_LOOP_DELAY)
         if varDict['mode'] == 0:
-            wiringpi.pwmWrite(18, varDict['x'])
-            wiringpi.pwmWrite(13, varDict['y'])
+            millis = int(round(time.time() * 1000))
+            if millis - lastUpdate > 500:
+                lastUpdate = millis
+                wiringpi.pwmWrite(18, varDict['x'])
+                wiringpi.pwmWrite(13, varDict['y'])
         elif varDict['mode'] == 1:
             millis = int(round(time.time() * 1000))
             x = pnoise1((startMillis-millis)/PERLIN_SPEED+1234.56789, octaves=4)
@@ -184,9 +187,13 @@ with picamera.PiCamera(resolution='1280x720', framerate=24) as camera:
             wiringpi.pwmWrite(18, int((x+1)/2*200+50))
             wiringpi.pwmWrite(13, int((y+1)/2*200+50))
         elif varDict['mode'] == 2:
-            #
-            #   TODO: RANDOM LOOKING
-            #
+            millis = int(round(time.time() * 1000))
+            if millis - lastUpdate > 500:
+                lastUpdate = millis
+                x = random.randrange(50, 250)
+                y = random.randrange(50, 250)
+                wiringpi.pwmWrite(18, int(x))
+                wiringpi.pwmWrite(13, int(y))
         else:
             wiringpi.pwmWrite(18, 150)
             wiringpi.pwmWrite(13, 150)

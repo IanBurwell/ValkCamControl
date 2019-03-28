@@ -1,10 +1,12 @@
 package com.valkcam.ian.valkcam;
 
 import android.annotation.SuppressLint;
+import android.app.ActionBar;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
@@ -16,15 +18,29 @@ import android.webkit.WebView;
 import android.widget.ImageButton;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.ProtocolException;
 import java.net.Socket;
+import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import io.github.controlwear.virtual.joystick.android.JoystickView;
+
+import static com.valkcam.ian.valkcam.MainActivity.SERVERPORT;
+import static com.valkcam.ian.valkcam.MainActivity.SERVER_IP;
+import static com.valkcam.ian.valkcam.MainActivity.SOCKET_CHECK_SEND_DELTA;
 
 /**
  * Todo:
@@ -41,7 +57,7 @@ import io.github.controlwear.virtual.joystick.android.JoystickView;
 public class MainActivity extends Activity  {
 
     public static final long SOCKET_CHECK_SEND_DELTA = 10;//ms in between checking to send
-    public static final long BUTTON_SEND_DELTA = 50;//ms in between sending
+    public static final long BUTTON_SEND_DELTA = 10;//ms in between sending
     public static final int SERVERPORT = 5000;
     public static final String SERVER_IP = "192.168.4.1";
     public static final String piAddr = "http://192.168.4.1:8000/index.html";
@@ -50,14 +66,23 @@ public class MainActivity extends Activity  {
     WebView mWebView;
     ImageButton btnSettings;
     JoystickView joystick;
+    View sView;
+
+    private boolean socCon;
 
     onConnectionStateListener cUL = new onConnectionStateListener() {
         @Override
         public void onUpdate(boolean connected) {
+            socCon = connected;
             if(connected){
                 btnSettings.setImageResource(R.drawable.conn);
+                mWebView.setVisibility(View.VISIBLE);
+                sView.setVisibility(View.INVISIBLE);
+                mWebView.reload();
             }else{
                 btnSettings.setImageResource(R.drawable.disc);
+                mWebView.setVisibility(View.INVISIBLE);
+                sView.setVisibility(View.VISIBLE);
             }
         }
     };
@@ -70,13 +95,15 @@ public class MainActivity extends Activity  {
         if(prefs.getBoolean("pref_socketStatus", true))
             cThread = new CommHandler();
         //Remove notification bar
-        this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
-
+        //this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_FULLSCREEN);
         setContentView(R.layout.activity_main);
+        FullScreencall();
 
         mWebView = findViewById(R.id.webview);
-
+        sView = findViewById(R.id.staticview);
         btnSettings = findViewById(R.id.btnSettings);
+
 
 
         //SETTINGS
@@ -89,7 +116,9 @@ public class MainActivity extends Activity  {
         btnSettings.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                mWebView.reload();
+                    mWebView.setVisibility(View.VISIBLE);
+                    sView.setVisibility(View.INVISIBLE);
+                    mWebView.reload();
                 return true;
             }
         });
@@ -113,14 +142,16 @@ public class MainActivity extends Activity  {
         if(prefs.getBoolean("pref_socketStatus", true))
             cThread.addConnectionListener(cUL);
 
-
         mWebView.loadUrl(piAddr);
+        sView.setVisibility(View.INVISIBLE);
+        mWebView.setVisibility(View.VISIBLE);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         updatePrefs();
+        FullScreencall();
     }
 
     public static boolean updatePrefs = false;
@@ -152,6 +183,15 @@ public class MainActivity extends Activity  {
         }else{
             joystick.setVisibility(View.INVISIBLE);
         }
+    }
+
+
+    public void FullScreencall() {
+            //for new api versions.
+            View decorView = getWindow().getDecorView();
+            int uiOptions = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY | View.SYSTEM_UI_FLAG_FULLSCREEN;
+            decorView.setSystemUiVisibility(uiOptions);
+
     }
 
     class CommHandler extends Thread{

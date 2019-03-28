@@ -14,25 +14,30 @@
     <!-- This FrameLayout insets its children based on system windows using
          android:fitsSystemWindows. -->
 
+    <com.valkcam.ian.valkcam.StaticView
+        android:id="@+id/staticview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
     <WebView
         android:id="@+id/webview"
         android:layout_width="match_parent"
         android:layout_height="match_parent" >
 
-        <ImageView
-            android:id="@+id/iv_overlay"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_x="0dp"
-            android:layout_y="0dp"
-            android:adjustViewBounds="false"
-            android:contentDescription="overlay"
-            android:cropToPadding="false"
-            android:scaleType="centerCrop"
-            android:src="@drawable/vc_overlay"
-            tools:rotation="90" />
-
     </WebView>
+
+    <ImageView
+        android:id="@+id/iv_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_x="0dp"
+        android:layout_y="0dp"
+        android:adjustViewBounds="false"
+        android:contentDescription="overlay"
+        android:cropToPadding="false"
+        android:scaleType="centerCrop"
+        android:src="@drawable/vc_overlay"
+        tools:rotation="90" />
 
     <android.support.constraint.ConstraintLayout
         android:layout_width="match_parent"
